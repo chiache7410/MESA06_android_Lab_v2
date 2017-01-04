@@ -3,30 +3,22 @@ package tw.org.iii.lab_v2;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.media.Image;
-import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-
 public class MainActivity extends AppCompatActivity {
     private GridView drawer;
     private MyAdapter myAdapter;
@@ -41,14 +33,35 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         roomkey = new ArrayList<>();
-        // Write a message to the database
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("message");
-        myRef.setValue("Hello, World!");
-        //
         roomkey.add("xxx");
-        roomkey.add("yyy");
-        roomkey.add("zzz");
+        final FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final DatabaseReference myRef = database.getReference("StickyGobblet");
+        myRef.child("Playing").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                roomkey.add(dataSnapshot.getKey());
+                myAdapter.notifyDataSetChanged();
+                Log.v("testlog","onChildAdded");
+            }
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                Log.v("testlog","onChildChanged");
+            }
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                roomkey.remove(dataSnapshot.getKey());
+                myAdapter.notifyDataSetChanged();
+                Log.v("testlog","onChildRemoved");
+            }
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                Log.v("testlog","onChildMoved");
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.v("testlog","onCancelled");
+            }
+        });
         drawer = (GridView)findViewById(R.id.gridView);
         drawer.setX(-200f);
         initGridView();
@@ -81,9 +94,6 @@ public class MainActivity extends AppCompatActivity {
         public View getView(int i, View view, ViewGroup viewGroup) {
             if(view == null) {
                 view = LayoutInflater.from(context).inflate(R.layout.layout_item,null);
-//                img = new ImageView(context);
-//                img.setLayoutParams(new GridView.LayoutParams(128,128));
-//                img.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             }
             ImageView img = (ImageView)view.findViewById(R.id.item_img);
             TextView title = (TextView)view.findViewById(R.id.item_title);
